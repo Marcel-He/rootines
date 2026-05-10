@@ -6,6 +6,7 @@ import { getPlants, savePlant, getTasksByPlant } from "@/lib/storage";
 import PlantCard from "@/components/PlantCard";
 import AddInline from "@/components/AddInline";
 import { nanoid } from "nanoid";
+import { createClient } from "@/lib/supabase-browser";
 
 export default function Home() {
   const [plants, setPlants] = useState<Plant[]>([]);
@@ -35,7 +36,19 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-lg mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">My Plants</h1>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-2xl font-bold text-gray-900">My Plants</h1>
+          <button
+            onClick={async () => {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+              window.location.href = "/login";
+            }}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
         <p className="text-sm text-gray-400 mb-6">
           {plants.length === 0
             ? "Add your first plant below"

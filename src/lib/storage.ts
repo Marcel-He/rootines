@@ -1,5 +1,5 @@
 import { Plant, Task } from "@/types";
-import { supabase } from "./supabase";
+import { createClient } from "./supabase-browser";
 
 function rowToPlant(row: Record<string, unknown>): Plant {
   return {
@@ -19,47 +19,64 @@ function rowToTask(row: Record<string, unknown>): Task {
   };
 }
 
+async function getUserId(): Promise<string | null> {
+  const supabase = createClient();
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}
+
 export async function getPlants(): Promise<Plant[]> {
+  const supabase = createClient();
   const { data, error } = await supabase.from("plants").select("*").order("created_at");
   if (error || !data) return [];
   return data.map(rowToPlant);
 }
 
 export async function savePlant(plant: Plant): Promise<void> {
+  const supabase = createClient();
+  const userId = await getUserId();
   await supabase.from("plants").upsert({
     id: plant.id,
     name: plant.name,
     created_at: plant.createdAt,
+    user_id: userId,
   });
 }
 
 export async function deletePlant(id: string): Promise<void> {
+  const supabase = createClient();
   await supabase.from("plants").delete().eq("id", id);
 }
 
 export async function getAllTasks(): Promise<Task[]> {
+  const supabase = createClient();
   const { data, error } = await supabase.from("tasks").select("*");
   if (error || !data) return [];
   return data.map(rowToTask);
 }
 
 export async function getTasksByPlant(plantId: string): Promise<Task[]> {
+  const supabase = createClient();
   const { data, error } = await supabase.from("tasks").select("*").eq("plant_id", plantId);
   if (error || !data) return [];
   return data.map(rowToTask);
 }
 
 export async function saveTask(task: Task): Promise<void> {
+  const supabase = createClient();
+  const userId = await getUserId();
   await supabase.from("tasks").upsert({
     id: task.id,
     plant_id: task.plantId,
     name: task.name,
     completions: task.completions,
     color: task.color ?? null,
+    user_id: userId,
   });
 }
 
 export async function completeTask(taskId: string): Promise<Task | null> {
+  const supabase = createClient();
   const { data: row } = await supabase.from("tasks").select("*").eq("id", taskId).single();
   if (!row) return null;
   const completions = [...((row.completions as string[]) ?? []), new Date().toISOString()].sort();
@@ -74,6 +91,7 @@ export async function completeTask(taskId: string): Promise<Task | null> {
 }
 
 export async function updateTask(taskId: string, patch: Partial<Task>): Promise<Task | null> {
+  const supabase = createClient();
   const dbPatch: Record<string, unknown> = {};
   if (patch.name !== undefined) dbPatch.name = patch.name;
   if (patch.color !== undefined) dbPatch.color = patch.color;
@@ -89,5 +107,6 @@ export async function updateTask(taskId: string, patch: Partial<Task>): Promise<
 }
 
 export async function deleteTask(id: string): Promise<void> {
+  const supabase = createClient();
   await supabase.from("tasks").delete().eq("id", id);
 }

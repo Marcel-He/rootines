@@ -15,12 +15,12 @@ A minimal web app for tracking plant care tasks. The core idea: no long setup fo
 ## Stack
 
 - **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS**
-- **No backend** — all data lives in `localStorage`
+- **Supabase** — Postgres database + Auth (magic link email)
 - **Node.js 26** (upgraded from 20.2.0 during initial setup)
 
 ## Goal & USP
 
-Fast to open, one tap to log a task. No accounts, no sync, no config. The schedule emerges automatically from usage — mark a task done twice and it will start showing a due date.
+Fast to open, one tap to log a task. The schedule emerges automatically from usage — mark a task done twice and it will start showing a due date.
 
 ## Future plans
 
@@ -46,7 +46,7 @@ type Task = {
 };
 ```
 
-Data is stored in localStorage under two keys: `"plants"` and `"tasks"` (JSON arrays).
+Data is stored in Supabase Postgres in `plants` and `tasks` tables. Both tables have `user_id uuid` (references `auth.users`) with RLS enabled — users only see their own rows.
 
 ## Auto-scheduling Logic (`src/lib/scheduler.ts`)
 
@@ -64,6 +64,11 @@ src/
   app/
     layout.tsx                      # Root layout, metadata
     page.tsx                        # / — plant list
+    login/
+      page.tsx                      # /login — magic link email form
+    auth/
+      callback/
+        route.ts                    # /auth/callback — exchanges magic link token for session
     plants/
       [id]/
         page.tsx                    # /plants/[id] — plant detail + task list
@@ -76,17 +81,21 @@ src/
     TaskItem.tsx                    # Task row: color dot + name + due label + Done button
     Toast.tsx                       # Slide-up feedback notification (auto-dismisses ~2s)
   lib/
-    storage.ts                      # localStorage CRUD — getPlants, savePlant, deletePlant,
+    storage.ts                      # Supabase CRUD — getPlants, savePlant, deletePlant,
                                     #   getTasksByPlant, saveTask, updateTask, completeTask, deleteTask
+    supabase-browser.ts             # Supabase browser client (used in "use client" components)
+    supabase-server.ts              # Supabase server client (used in proxy.ts)
     scheduler.ts                    # Due date calculation logic (framework-agnostic)
     colors.ts                       # Color palette + getColor helper
   types/
     index.ts                        # Plant and Task types (framework-agnostic)
+  proxy.ts                          # Auth guard — redirects unauthenticated users to /login
 ```
 
 ## Key Behaviours
 
-- **Plant list (`/`)** — plant cards with most-urgent due label; inline add at bottom
+- **Login (`/login`)** — magic link email form; session lasts up to 60 days with auto-refresh
+- **Plant list (`/`)** — plant cards with most-urgent due label; inline add at bottom; Sign out button
 - **Plant detail (`/plants/[id]`)** — task list with color dot, due label, Done button; inline add; toast on Done
 - **Task detail (`/plants/[id]/tasks/[taskId]`)** — color picker, schedule summary (status, next due, avg interval, total completions), full completion history with per-entry intervals; toast on Mark done
 - **Toast** — slides up on task completion, auto-dismisses after ~2s
@@ -96,3 +105,7 @@ src/
 ```bash
 npm run dev   # starts on localhost:3000
 ```
+
+## Rules
+
+- Never read `.env.local`
