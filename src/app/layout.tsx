@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Plant Tracker",
-  description: "Track your plants and their care tasks",
+  title: "Rootines",
+  description: "Track your plant care tasks",
 };
 
 export const viewport: Viewport = {
