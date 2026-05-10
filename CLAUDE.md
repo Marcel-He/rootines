@@ -2,6 +2,16 @@
 
 A minimal web app for tracking plant care tasks. The core idea: no long setup forms — add a plant name, add task names, mark them done. The app learns from completion history and auto-calculates the next due date based on the average interval between completions.
 
+## Design Principle: Usability First
+
+**Easy and straightforward usability is the highest priority** when making any product or code decision.
+
+- Fewer taps/clicks is always better. Prefer one-tap actions over multi-step flows.
+- Never add friction: no confirmation dialogs, no required fields beyond the minimum, no onboarding.
+- If a feature would make the UI busier or harder to scan, don't add it.
+- Default states should be immediately useful — the user should never feel lost or stuck.
+- When in doubt between two approaches, choose the one a first-time user would find obvious without explanation.
+
 ## Stack
 
 - **Next.js 16** (App Router) + **TypeScript** + **Tailwind CSS**
