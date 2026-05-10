@@ -1,78 +1,93 @@
 import { Plant, Task } from "@/types";
+import { supabase } from "./supabase";
 
-const PLANTS_KEY = "plants";
-const TASKS_KEY = "tasks";
-
-export function getPlants(): Plant[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(PLANTS_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
+function rowToPlant(row: Record<string, unknown>): Plant {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    createdAt: row.created_at as string,
+  };
 }
 
-export function savePlant(plant: Plant): void {
-  const plants = getPlants();
-  const existing = plants.findIndex((p) => p.id === plant.id);
-  if (existing >= 0) {
-    plants[existing] = plant;
-  } else {
-    plants.push(plant);
-  }
-  localStorage.setItem(PLANTS_KEY, JSON.stringify(plants));
+function rowToTask(row: Record<string, unknown>): Task {
+  return {
+    id: row.id as string,
+    plantId: row.plant_id as string,
+    name: row.name as string,
+    completions: (row.completions as string[]) ?? [],
+    color: (row.color as string | null) ?? undefined,
+  };
 }
 
-export function deletePlant(id: string): void {
-  const plants = getPlants().filter((p) => p.id !== id);
-  localStorage.setItem(PLANTS_KEY, JSON.stringify(plants));
-  const tasks = getAllTasks().filter((t) => t.plantId !== id);
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+export async function getPlants(): Promise<Plant[]> {
+  const { data, error } = await supabase.from("plants").select("*").order("created_at");
+  if (error || !data) return [];
+  return data.map(rowToPlant);
 }
 
-export function getAllTasks(): Task[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(localStorage.getItem(TASKS_KEY) ?? "[]");
-  } catch {
-    return [];
-  }
+export async function savePlant(plant: Plant): Promise<void> {
+  await supabase.from("plants").upsert({
+    id: plant.id,
+    name: plant.name,
+    created_at: plant.createdAt,
+  });
 }
 
-export function getTasksByPlant(plantId: string): Task[] {
-  return getAllTasks().filter((t) => t.plantId === plantId);
+export async function deletePlant(id: string): Promise<void> {
+  await supabase.from("plants").delete().eq("id", id);
 }
 
-export function saveTask(task: Task): void {
-  const tasks = getAllTasks();
-  const existing = tasks.findIndex((t) => t.id === task.id);
-  if (existing >= 0) {
-    tasks[existing] = task;
-  } else {
-    tasks.push(task);
-  }
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+export async function getAllTasks(): Promise<Task[]> {
+  const { data, error } = await supabase.from("tasks").select("*");
+  if (error || !data) return [];
+  return data.map(rowToTask);
 }
 
-export function completeTask(taskId: string): Task | null {
-  const tasks = getAllTasks();
-  const task = tasks.find((t) => t.id === taskId);
-  if (!task) return null;
-  task.completions = [...task.completions, new Date().toISOString()].sort();
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-  return task;
+export async function getTasksByPlant(plantId: string): Promise<Task[]> {
+  const { data, error } = await supabase.from("tasks").select("*").eq("plant_id", plantId);
+  if (error || !data) return [];
+  return data.map(rowToTask);
 }
 
-export function updateTask(taskId: string, patch: Partial<Task>): Task | null {
-  const tasks = getAllTasks();
-  const idx = tasks.findIndex((t) => t.id === taskId);
-  if (idx < 0) return null;
-  tasks[idx] = { ...tasks[idx], ...patch };
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-  return tasks[idx];
+export async function saveTask(task: Task): Promise<void> {
+  await supabase.from("tasks").upsert({
+    id: task.id,
+    plant_id: task.plantId,
+    name: task.name,
+    completions: task.completions,
+    color: task.color ?? null,
+  });
 }
 
-export function deleteTask(id: string): void {
-  const tasks = getAllTasks().filter((t) => t.id !== id);
-  localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+export async function completeTask(taskId: string): Promise<Task | null> {
+  const { data: row } = await supabase.from("tasks").select("*").eq("id", taskId).single();
+  if (!row) return null;
+  const completions = [...((row.completions as string[]) ?? []), new Date().toISOString()].sort();
+  const { data: updated } = await supabase
+    .from("tasks")
+    .update({ completions })
+    .eq("id", taskId)
+    .select()
+    .single();
+  if (!updated) return null;
+  return rowToTask(updated);
+}
+
+export async function updateTask(taskId: string, patch: Partial<Task>): Promise<Task | null> {
+  const dbPatch: Record<string, unknown> = {};
+  if (patch.name !== undefined) dbPatch.name = patch.name;
+  if (patch.color !== undefined) dbPatch.color = patch.color;
+  if (patch.completions !== undefined) dbPatch.completions = patch.completions;
+  const { data: updated } = await supabase
+    .from("tasks")
+    .update(dbPatch)
+    .eq("id", taskId)
+    .select()
+    .single();
+  if (!updated) return null;
+  return rowToTask(updated);
+}
+
+export async function deleteTask(id: string): Promise<void> {
+  await supabase.from("tasks").delete().eq("id", id);
 }

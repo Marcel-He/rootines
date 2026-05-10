@@ -12,18 +12,22 @@ export default function Home() {
   const [taskMap, setTaskMap] = useState<Record<string, Task[]>>({});
 
   useEffect(() => {
-    const loaded = getPlants();
-    setPlants(loaded);
-    const map: Record<string, Task[]> = {};
-    loaded.forEach((p) => {
-      map[p.id] = getTasksByPlant(p.id);
-    });
-    setTaskMap(map);
+    (async () => {
+      const loaded = await getPlants();
+      setPlants(loaded);
+      const map: Record<string, Task[]> = {};
+      await Promise.all(
+        loaded.map(async (p) => {
+          map[p.id] = await getTasksByPlant(p.id);
+        })
+      );
+      setTaskMap(map);
+    })();
   }, []);
 
-  function handleAddPlant(name: string) {
+  async function handleAddPlant(name: string) {
     const plant: Plant = { id: nanoid(), name, createdAt: new Date().toISOString() };
-    savePlant(plant);
+    await savePlant(plant);
     setPlants((prev) => [...prev, plant]);
     setTaskMap((prev) => ({ ...prev, [plant.id]: [] }));
   }
