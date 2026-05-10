@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Plant, Task } from "@/types";
-import { getPlants, getTasksByPlant, saveTask, completeTask } from "@/lib/storage";
+import { getPlants, getTasksByPlant, saveTask, savePlant, deletePlant, completeTask } from "@/lib/storage";
 import TaskItem from "@/components/TaskItem";
 import AddInline from "@/components/AddInline";
 import TaskSuggestions from "@/components/TaskSuggestions";
@@ -16,12 +16,17 @@ export default function PlantDetailPage() {
   const [plant, setPlant] = useState<Plant | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState("");
 
   useEffect(() => {
     const plants = getPlants();
     const found = plants.find((p) => p.id === id) ?? null;
     setPlant(found);
-    if (found) setTasks(getTasksByPlant(id));
+    if (found) {
+      setTasks(getTasksByPlant(id));
+      setNameValue(found.name);
+    }
   }, [id]);
 
   function handleAddTask(name: string) {
@@ -33,6 +38,20 @@ export default function PlantDetailPage() {
     };
     saveTask(task);
     setTasks((prev) => [...prev, task]);
+  }
+
+  function handleRename() {
+    const trimmed = nameValue.trim();
+    if (!trimmed || !plant) { setEditingName(false); setNameValue(plant?.name ?? ""); return; }
+    const updated = { ...plant, name: trimmed };
+    savePlant(updated);
+    setPlant(updated);
+    setEditingName(false);
+  }
+
+  function handleDeletePlant() {
+    deletePlant(id);
+    router.push("/");
   }
 
   function handleDone(taskId: string) {
@@ -60,7 +79,26 @@ export default function PlantDetailPage() {
           ← Back
         </button>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">{plant.name}</h1>
+        {editingName ? (
+          <input
+            autoFocus
+            className="text-2xl font-bold text-gray-900 mb-1 bg-transparent border-b-2 border-blue-400 outline-none w-full"
+            value={nameValue}
+            onChange={(e) => setNameValue(e.target.value)}
+            onBlur={handleRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleRename();
+              if (e.key === "Escape") { setEditingName(false); setNameValue(plant.name); }
+            }}
+          />
+        ) : (
+          <h1
+            className="text-2xl font-bold text-gray-900 mb-1 cursor-pointer"
+            onClick={() => setEditingName(true)}
+          >
+            {plant.name}
+          </h1>
+        )}
         <p className="text-sm text-gray-400 mb-6">
           {tasks.length === 0
             ? "No tasks yet — add one below"
@@ -79,6 +117,15 @@ export default function PlantDetailPage() {
           currentTaskNames={tasks.map((t) => t.name)}
           onSelect={handleAddTask}
         />
+
+        <div className="mt-10 pt-6 border-t border-gray-100">
+          <button
+            onClick={handleDeletePlant}
+            className="text-sm text-red-400 hover:text-red-600 transition-colors"
+          >
+            Delete plant
+          </button>
+        </div>
       </div>
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </main>

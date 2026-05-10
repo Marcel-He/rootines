@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Task } from "@/types";
-import { getTasksByPlant, completeTask, updateTask } from "@/lib/storage";
+import { getTasksByPlant, completeTask, updateTask, deleteTask } from "@/lib/storage";
 import { getDueLabel, getNextDueDate } from "@/lib/scheduler";
 import { TASK_COLORS, getColor } from "@/lib/colors";
 import Toast from "@/components/Toast";
@@ -36,10 +36,14 @@ export default function TaskDetailPage() {
   const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [toast, setToast] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState("");
 
   useEffect(() => {
     const tasks = getTasksByPlant(id);
-    setTask(tasks.find((t) => t.id === taskId) ?? null);
+    const found = tasks.find((t) => t.id === taskId) ?? null;
+    setTask(found);
+    if (found) setNameValue(found.name);
   }, [id, taskId]);
 
   function handleDone() {
@@ -47,6 +51,19 @@ export default function TaskDetailPage() {
     if (!updated) return;
     setTask(updated);
     setToast(true);
+  }
+
+  function handleRename() {
+    const trimmed = nameValue.trim();
+    if (!trimmed || !task) { setEditingName(false); setNameValue(task?.name ?? ""); return; }
+    const updated = updateTask(taskId, { name: trimmed });
+    if (updated) setTask(updated);
+    setEditingName(false);
+  }
+
+  function handleDeleteTask() {
+    deleteTask(taskId);
+    router.back();
   }
 
   function handleColorChange(colorId: string) {
@@ -84,7 +101,26 @@ export default function TaskDetailPage() {
         <div className="flex items-start justify-between gap-3 mb-6">
           <div className="flex items-center gap-3 min-w-0">
             <span className={`shrink-0 w-3 h-3 rounded-full ${activeColor.bg}`} />
-            <h1 className="text-2xl font-bold text-gray-900 truncate">{task.name}</h1>
+            {editingName ? (
+              <input
+                autoFocus
+                className="text-2xl font-bold text-gray-900 bg-transparent border-b-2 border-blue-400 outline-none min-w-0 flex-1"
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={handleRename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  if (e.key === "Escape") { setEditingName(false); setNameValue(task.name); }
+                }}
+              />
+            ) : (
+              <h1
+                className="text-2xl font-bold text-gray-900 truncate cursor-pointer"
+                onClick={() => setEditingName(true)}
+              >
+                {task.name}
+              </h1>
+            )}
           </div>
           <button
             onClick={handleDone}
@@ -146,7 +182,7 @@ export default function TaskDetailPage() {
         </div>
 
         {/* Completion history */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
           <p className="text-xs text-gray-400 uppercase tracking-wide mb-3">History</p>
           {sorted.length === 0 ? (
             <p className="text-sm text-gray-400">No completions yet.</p>
@@ -171,6 +207,14 @@ export default function TaskDetailPage() {
               })}
             </div>
           )}
+        </div>
+        <div className="pt-6 border-t border-gray-100">
+          <button
+            onClick={handleDeleteTask}
+            className="text-sm text-red-400 hover:text-red-600 transition-colors"
+          >
+            Delete task
+          </button>
         </div>
       </div>
       {toast && <Toast message="Marked done" onDone={() => setToast(false)} />}
