@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { Task } from "@/types";
 import { getAllTasks } from "@/lib/storage";
 
 type Props = {
@@ -9,10 +11,16 @@ type Props = {
 };
 
 export default function TaskSuggestions({ plantId, currentTaskNames, onSelect }: Props) {
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    getAllTasks().then(setAllTasks);
+  }, []);
+
   const currentSet = new Set(currentTaskNames.map((n) => n.trim().toLowerCase()));
 
   const freq: Record<string, { count: number; canonical: string }> = {};
-  for (const task of getAllTasks()) {
+  for (const task of allTasks) {
     if (task.plantId === plantId) continue;
     const key = task.name.trim().toLowerCase();
     if (!freq[key]) freq[key] = { count: 0, canonical: task.name.trim() };

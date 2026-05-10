@@ -18,25 +18,27 @@ export default function PlantDetailPage() {
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const plants = getPlants();
-    const found = plants.find((p) => p.id === id) ?? null;
-    setPlant(found);
-    if (found) setTasks(getTasksByPlant(id));
+    (async () => {
+      const plants = await getPlants();
+      const found = plants.find((p) => p.id === id) ?? null;
+      setPlant(found);
+      if (found) setTasks(await getTasksByPlant(id));
+    })();
   }, [id]);
 
-  function handleAddTask(name: string) {
+  async function handleAddTask(name: string) {
     const task: Task = {
       id: nanoid(),
       plantId: id,
       name,
       completions: [],
     };
-    saveTask(task);
+    await saveTask(task);
     setTasks((prev) => [...prev, task]);
   }
 
-  function handleDone(taskId: string) {
-    const updated = completeTask(taskId);
+  async function handleDone(taskId: string) {
+    const updated = await completeTask(taskId);
     if (!updated) return;
     setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
     setToast(`${updated.name} marked done`);
