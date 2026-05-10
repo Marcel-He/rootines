@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Plant, Task } from "@/types";
+import Link from "next/link";
 import { getPlants, savePlant, getTasksByPlant } from "@/lib/storage";
+import { getNextDueDate } from "@/lib/scheduler";
 import PlantCard from "@/components/PlantCard";
 import AddInline from "@/components/AddInline";
 import { nanoid } from "nanoid";
@@ -37,6 +39,26 @@ export default function Home() {
             ? "Add your first plant below"
             : `${plants.length} plant${plants.length !== 1 ? "s" : ""}`}
         </p>
+
+        {(() => {
+          const endOfToday = new Date();
+          endOfToday.setHours(23, 59, 59, 999);
+          const dueCount = Object.values(taskMap)
+            .flat()
+            .filter((t) => {
+              const next = getNextDueDate(t.completions);
+              return next !== null && next <= endOfToday;
+            }).length;
+          return dueCount > 0 ? (
+            <Link
+              href="/due"
+              className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium mb-6 hover:bg-red-100 transition-colors"
+            >
+              <span>{dueCount} task{dueCount !== 1 ? "s" : ""} due</span>
+              <span>→</span>
+            </Link>
+          ) : null;
+        })()}
 
         <div className="flex flex-col gap-3 mb-6">
           {plants.map((plant) => (
