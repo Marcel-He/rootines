@@ -6,6 +6,7 @@ import { Plant, Task } from "@/types";
 import { getPlants, getTasksByPlant, saveTask, completeTask } from "@/lib/storage";
 import TaskItem from "@/components/TaskItem";
 import AddInline from "@/components/AddInline";
+import TaskSuggestions from "@/components/TaskSuggestions";
 import Toast from "@/components/Toast";
 import { nanoid } from "nanoid";
 
@@ -73,6 +74,11 @@ export default function PlantDetailPage() {
         </div>
 
         <AddInline placeholder="Add a task… (press Enter)" onAdd={handleAddTask} />
+        <TaskSuggestions
+          plantId={id}
+          currentTaskNames={tasks.map((t) => t.name)}
+          onSelect={handleAddTask}
+        />
       </div>
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </main>

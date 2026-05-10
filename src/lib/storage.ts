@@ -30,7 +30,7 @@ export function deletePlant(id: string): void {
   localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
 }
 
-function getAllTasks(): Task[] {
+export function getAllTasks(): Task[] {
   if (typeof window === "undefined") return [];
   try {
     return JSON.parse(localStorage.getItem(TASKS_KEY) ?? "[]");
