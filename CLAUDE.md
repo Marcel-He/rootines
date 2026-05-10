@@ -91,6 +91,19 @@ src/
 - **Task detail (`/plants/[id]/tasks/[taskId]`)** — color picker, schedule summary (status, next due, avg interval, total completions), full completion history with per-entry intervals; toast on Mark done
 - **Toast** — slides up on task completion, auto-dismisses after ~2s
 
+## Development Standards
+
+### Commits
+
+- **Atomic commits** — each commit does one thing. A feature and its test go together; a refactor and a bug fix do not.
+- **Conventional commits** — use the format `type(scope): description`. Common types: `feat`, `fix`, `refactor`, `test`, `chore`, `docs`. Example: `feat(scheduler): calculate due date from average interval`.
+
+### Testing
+
+- All logic in `lib/` must have test coverage. This includes `scheduler.ts`, `storage.ts`, and `colors.ts`.
+- Tests live alongside the source file or in a `__tests__/` sibling directory.
+- New features to `lib/` are not complete until they have tests.
+
 ## Dev
 
 ```bash
