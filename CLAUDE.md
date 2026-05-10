@@ -18,6 +18,9 @@ A minimal web app for tracking plant care tasks. The core idea: no long setup fo
 - **Supabase** — Postgres database + Auth (magic link email)
 - **Node.js 26** (upgraded from 20.2.0 during initial setup)
 
+## Frontend Standarts
+- 
+
 ## Goal & USP
 
 Fast to open, one tap to log a task. The schedule emerges automatically from usage — mark a task done twice and it will start showing a due date.
