@@ -38,19 +38,21 @@ export default function TaskDetailPage() {
   const [toast, setToast] = useState(false);
 
   useEffect(() => {
-    const tasks = getTasksByPlant(id);
-    setTask(tasks.find((t) => t.id === taskId) ?? null);
+    (async () => {
+      const tasks = await getTasksByPlant(id);
+      setTask(tasks.find((t) => t.id === taskId) ?? null);
+    })();
   }, [id, taskId]);
 
-  function handleDone() {
-    const updated = completeTask(taskId);
+  async function handleDone() {
+    const updated = await completeTask(taskId);
     if (!updated) return;
     setTask(updated);
     setToast(true);
   }
 
-  function handleColorChange(colorId: string) {
-    const updated = updateTask(taskId, { color: colorId });
+  async function handleColorChange(colorId: string) {
+    const updated = await updateTask(taskId, { color: colorId });
     if (updated) setTask(updated);
   }
 

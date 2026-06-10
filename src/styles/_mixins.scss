@@ -1,0 +1,40 @@
+// =============================================================================
+// Global Mixins
+// =============================================================================
+
+// Breakpoints
+$breakpoint-sm: 640px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 1024px;
+$breakpoint-xl: 1280px;
+
+@mixin sm  { @media (min-width: $breakpoint-sm) { @content; } }
+@mixin md  { @media (min-width: $breakpoint-md) { @content; } }
+@mixin lg  { @media (min-width: $breakpoint-lg) { @content; } }
+@mixin xl  { @media (min-width: $breakpoint-xl) { @content; } }
+
+// Visually hidden (accessible)
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Focus ring
+@mixin focus-ring($color: currentColor, $offset: 2px) {
+  outline: 2px solid $color;
+  outline-offset: $offset;
+}
+
+// Truncate text
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
